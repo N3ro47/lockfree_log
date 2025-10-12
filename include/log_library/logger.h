@@ -30,6 +30,7 @@ private:
     void consumer_thread_loop();
 
     std::atomic<bool> m_done{false};
+    alignas(64) std::atomic<uint64_t> m_signal{0};
     MPSCQueue<internal::MessagePayload, 1024> m_queue;
     std::jthread m_consumer_thread;
     std::unique_ptr<Sink> m_sink;

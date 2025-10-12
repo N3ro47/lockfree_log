@@ -35,11 +35,14 @@ Logger::~Logger() {
 
 void Logger::push_log(internal::MessagePayload&& payload) {
     m_queue.try_emplace(std::move(payload));
-    m_done.notify_one();
+    m_signal.fetch_add(1, std::memory_order_release);
+    m_signal.notify_one();
 }
 
 void Logger::shutdown() {
     m_done.store(true, std::memory_order_release);
+    m_signal.fetch_add(1, std::memory_order_release);
+    m_signal.notify_one();
 
     if (m_consumer_thread.joinable()) {
         m_consumer_thread.join();
@@ -60,7 +63,8 @@ void Logger::consumer_thread_loop() {
             buffer += "\n";
             m_sink->write(buffer, payload.level);
         } else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            auto current = m_signal.load(std::memory_order_acquire);
+            m_signal.wait(current, std::memory_order_acquire);
         }
     }
 
