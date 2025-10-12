@@ -4,9 +4,15 @@
 #include <format>
 #include <string_view>
 #include <memory>
+#include <atomic>
+#include <thread>
 #include "internal/message_payload.hpp"
+#include "mpsc_queue.hpp"
 
 namespace log_library {
+
+// Forward declarations
+class Sink;
 
 class Logger {
 public:
@@ -21,9 +27,12 @@ public:
 
 private:
     Logger();
+    void consumer_thread_loop();
 
-    class Impl;
-    std::unique_ptr<Impl> pimpl;
+    std::atomic<bool> m_done{false};
+    MPSCQueue<internal::MessagePayload, 1024> m_queue;
+    std::jthread m_consumer_thread;
+    std::unique_ptr<Sink> m_sink;
 };
 
 } // namespace log_library
