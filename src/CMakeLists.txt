@@ -1,13 +1,14 @@
-set(LOG_LIBRARY_SOURCES logger.cpp)
-
+set(LOG_LIBRARY_SOURCES 
+    logger.cpp
+    file_rotation.cpp
+)
 
 find_package(Threads REQUIRED)
 
-
 if(WIN32)
-    # list(APPEND LOG_LIBRARY_SOURCES platform/windows_sink.cpp)
+    list(APPEND LOG_LIBRARY_SOURCES windows_file_sink.cpp)
 elseif(UNIX)
-    # list(APPEND LOG_LIBRARY_SOURCES platform/linux_sink.cpp)
+    list(APPEND LOG_LIBRARY_SOURCES linux_file_sink.cpp)
 endif()
 
 add_library(log_library ${LOG_LIBRARY_SOURCES})

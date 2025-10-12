@@ -1,10 +1,21 @@
 #include <atomic>
 #include <log_library/logger.h>
+#include <log_library/sink.h>
+#include <log_library/file_sink_config.h>
+#include <log_library/sink_config.h>
 #include "mpsc_queue.hpp"
 #include <iostream>
 #include <chrono>
 #include <thread>
 #include <atomic>
+#include <memory>
+
+// Platform-specific includes
+#ifdef _WIN32
+#include "windows_file_sink.cpp"
+#else
+#include "linux_file_sink.cpp"
+#endif
 
 namespace log_library {
 
@@ -18,6 +29,11 @@ public:
     using Payload = internal::MessagePayload;
     MPSCQueue<Payload, 1024> m_queue;
     std::jthread m_consumer_thread;
+    std::unique_ptr<Sink> m_sink;
+    
+    Impl() {
+        m_sink = std::make_unique<LOG_SINK_TYPE>();
+    }
 };
 
 Logger& Logger::instance() {
@@ -59,7 +75,7 @@ void Logger::Impl::consumer_thread_loop() {
             buffer += ": ";
             payload.formatter(buffer, payload.format_string, payload.arg_buffer);
             buffer += "\n";
-            std::cout << buffer;
+            m_sink->write(buffer, payload.level);
         } else {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
@@ -72,8 +88,10 @@ void Logger::Impl::consumer_thread_loop() {
         buffer += ": ";
         payload.formatter(buffer, payload.format_string, payload.arg_buffer);
         buffer += "\n";
-        std::cout << buffer;
+        m_sink->write(buffer, payload.level);
     }
+    
+    m_sink->flush();
 }
 
 } // namespace log_library
