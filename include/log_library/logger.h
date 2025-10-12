@@ -42,7 +42,6 @@ private:
 #define LOG(level, fmt, ...)                                                   \
   do {                                                                         \
     if constexpr (level >= LOG_ACTIVE_LEVEL) {                                 \
-      (void)std::format(fmt __VA_OPT__(, ) __VA_ARGS__);                       \
       log_library::Logger::instance().push_log(                                \
           log_library::internal::MessagePayload(level,                         \
                                            fmt __VA_OPT__(, ) __VA_ARGS__));   \

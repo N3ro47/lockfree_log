@@ -13,7 +13,7 @@ public:
   static_assert((Capacity > 0) && ((Capacity & (Capacity - 1)) == 0),
                 "Capacity must be a power of 2");
 
-  MPSCQueue() : m_buffer(new Storage[Capacity]) {}
+  MPSCQueue() = default;
 
   ~MPSCQueue() {
     T dummy;
@@ -75,5 +75,5 @@ private:
 
   alignas(CACHE_LINE_SIZE) std::atomic<size_t> m_tail{0};
 
-  alignas(CACHE_LINE_SIZE) std::unique_ptr<Storage[]> m_buffer;
+  alignas(CACHE_LINE_SIZE) Storage m_buffer[Capacity];
 };

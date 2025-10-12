@@ -24,6 +24,14 @@ struct MessagePayload {
 
   MessagePayload() = default;
 
+  // Constructor for log messages with arguments
+  // 
+  // ARGUMENT TYPE CONSTRAINTS:
+  // - Prefer trivially copyable types (POD, pointers, string_view) for zero-allocation
+  // - Non-trivial types like std::string will be copied into the tuple, which may allocate
+  // - Use string literals or std::string_view instead of std::string when possible
+  // - Small structs/PODs are ideal for zero-allocation logging
+  // - Arguments are stored in-place using placement new, so avoid large objects
   template <typename... Args>
   MessagePayload(LogLevel lvl, std::string_view fmt, Args &&...args)
       : level(lvl), thread_id(std::this_thread::get_id()), format_string(fmt) {
