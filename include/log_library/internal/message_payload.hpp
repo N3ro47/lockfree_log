@@ -1,8 +1,9 @@
 #pragma once
 
+#include <log_library/config.h>
+
 #include <cstddef>
 #include <iterator>
-#include <log_library/config.h>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -25,11 +26,14 @@ struct MessagePayload {
   MessagePayload() = default;
 
   // Constructor for log messages with arguments
-  // 
+  //
   // ARGUMENT TYPE CONSTRAINTS:
-  // - Prefer trivially copyable types (POD, pointers, string_view) for zero-allocation
-  // - Non-trivial types like std::string will be copied into the tuple, which may allocate
-  // - Use string literals or std::string_view instead of std::string when possible
+  // - Prefer trivially copyable types (POD, pointers, string_view) for
+  // zero-allocation
+  // - Non-trivial types like std::string will be copied into the tuple, which
+  // may allocate
+  // - Use string literals or std::string_view instead of std::string when
+  // possible
   // - Small structs/PODs are ideal for zero-allocation logging
   // - Arguments are stored in-place using placement new, so avoid large objects
   template <typename... Args>
@@ -41,7 +45,7 @@ struct MessagePayload {
     formatter = &format_message<Args...>;
   }
 
-private:
+ private:
   template <typename... Args>
   static void format_message(std::string &out, std::string_view fmt,
                              const std::byte *buffer) {
@@ -57,4 +61,4 @@ private:
   }
 };
 
-} // namespace log_library::internal
+}  // namespace log_library::internal

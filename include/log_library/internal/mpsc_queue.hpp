@@ -8,8 +8,9 @@
 
 constexpr static size_t CACHE_LINE_SIZE = 64;
 
-template <typename T, size_t Capacity> class MPSCQueue {
-public:
+template <typename T, size_t Capacity>
+class MPSCQueue {
+ public:
   static_assert((Capacity > 0) && ((Capacity & (Capacity - 1)) == 0),
                 "Capacity must be a power of 2");
 
@@ -24,7 +25,8 @@ public:
   MPSCQueue(const MPSCQueue &) = delete;
   MPSCQueue &operator=(const MPSCQueue &) = delete;
 
-  template <typename... Args> bool try_emplace(Args &&...args) {
+  template <typename... Args>
+  bool try_emplace(Args &&...args) {
     auto current_head = m_head.load(std::memory_order_relaxed);
 
     for (;;) {
@@ -57,7 +59,7 @@ public:
 
     const size_t index = current_tail & (Capacity - 1);
 
-    T* slot = reinterpret_cast<T*>(&m_buffer[index]);
+    T *slot = reinterpret_cast<T *>(&m_buffer[index]);
 
     value = std::move(*slot);
 
@@ -68,7 +70,7 @@ public:
     return true;
   }
 
-private:
+ private:
   using Storage = std::aligned_storage_t<sizeof(T), alignof(T)>;
 
   alignas(CACHE_LINE_SIZE) std::atomic<size_t> m_head{0};
