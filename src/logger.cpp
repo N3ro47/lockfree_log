@@ -59,7 +59,7 @@ void Logger::consumer_thread_loop() {
     while (!m_done.load(std::memory_order_acquire)) {
         if (m_queue.try_pop(payload)) {
             buffer.clear();
-            std::format_to(std::back_inserter(buffer), "{}: {}", to_string(payload.level));
+            std::format_to(std::back_inserter(buffer), "{}: ", to_string(payload.level));
             payload.formatter(buffer, payload.format_string, payload.arg_buffer);
             buffer.push_back('\n');
             m_sink->write(buffer, payload.level);
@@ -72,7 +72,7 @@ void Logger::consumer_thread_loop() {
     //drain loop
     while (m_queue.try_pop(payload)) {
         buffer.clear();
-        std::format_to(std::back_inserter(buffer), "{}: {}", to_string(payload.level));
+        std::format_to(std::back_inserter(buffer), "{}: ", to_string(payload.level));
         payload.formatter(buffer, payload.format_string, payload.arg_buffer);
         buffer.push_back('\n');
         m_sink->write(buffer, payload.level);

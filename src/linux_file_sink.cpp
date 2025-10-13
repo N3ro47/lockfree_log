@@ -1,6 +1,6 @@
 #include <log_library/sink.h>
 #include <log_library/file_sink_config.h>
-#include "file_rotation.cpp"
+#include "file_rotation.h"
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
