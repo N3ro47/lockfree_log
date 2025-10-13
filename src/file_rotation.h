@@ -1,6 +1,6 @@
 #pragma once
 
-#include <log_library/file_sink_config.h>
+#include "internal/file_sink_config.h"
 #include <string>
 #include <vector>
 

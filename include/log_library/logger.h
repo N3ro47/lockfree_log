@@ -7,7 +7,7 @@
 #include <atomic>
 #include <thread>
 #include "internal/message_payload.hpp"
-#include "mpsc_queue.hpp"
+#include "internal/mpsc_queue.hpp"
 
 namespace log_library {
 

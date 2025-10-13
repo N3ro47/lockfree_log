@@ -1,8 +1,8 @@
 #include <atomic>
 #include <log_library/logger.h>
-#include <log_library/sink.h>
-#include <log_library/file_sink_config.h>
-#include <log_library/sink_config.h>
+#include "internal/sink.h"
+#include "internal/file_sink_config.h"
+#include "internal/sink_config.h"
 #include <iostream>
 #include <chrono>
 #include <thread>
