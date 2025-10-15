@@ -37,18 +37,33 @@ class Logger {
   std::unique_ptr<Sink> m_sink;
 };
 
+
+template <LogLevel level, typename... Args>
+inline void log(std::format_string<Args...> fmt, Args &&...args) {
+  if constexpr (level >= LOG_ACTIVE_LEVEL) {
+    Logger::instance().push_log(internal::MessagePayload(
+        level, fmt.get(), std::forward<Args>(args)...));
+  }
+}
+
+template <typename... Args>
+inline void log_debug(std::format_string<Args...> fmt, Args &&...args) {
+  log<LOG_LEVEL_DEBUG>(fmt, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+inline void log_info(std::format_string<Args...> fmt, Args &&...args) {
+  log<LOG_LEVEL_INFO>(fmt, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+inline void log_warn(std::format_string<Args...> fmt, Args &&...args) {
+  log<LOG_LEVEL_WARN>(fmt, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+inline void log_error(std::format_string<Args...> fmt, Args &&...args) {
+  log<LOG_LEVEL_ERROR>(fmt, std::forward<Args>(args)...);
+}
+
 }  // namespace log_library
-
-#define LOG(level, fmt, ...)                           \
-  do {                                                 \
-    if constexpr (level >= LOG_ACTIVE_LEVEL) {         \
-      log_library::Logger::instance().push_log(        \
-          log_library::internal::MessagePayload(       \
-              level, fmt __VA_OPT__(, ) __VA_ARGS__)); \
-    }                                                  \
-  } while (false)
-
-#define LOG_DEBUG(fmt, ...) LOG(LOG_LEVEL_DEBUG, fmt __VA_OPT__(, ) __VA_ARGS__)
-#define LOG_INFO(fmt, ...) LOG(LOG_LEVEL_INFO, fmt __VA_OPT__(, ) __VA_ARGS__)
-#define LOG_WARN(fmt, ...) LOG(LOG_LEVEL_WARN, fmt __VA_OPT__(, ) __VA_ARGS__)
-#define LOG_ERROR(fmt, ...) LOG(LOG_LEVEL_ERROR, fmt __VA_OPT__(, ) __VA_ARGS__)
