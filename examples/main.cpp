@@ -21,7 +21,7 @@ int main() {
     workers.emplace_back(worker_thread, i + 1);
   }
 
-  for (auto &t : workers) {
+  for (auto& t : workers) {
     t.join();
   }
 

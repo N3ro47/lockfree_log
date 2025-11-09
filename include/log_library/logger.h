@@ -17,13 +17,13 @@ class Sink;
 
 class Logger {
  public:
-  static Logger &instance();
+  static Logger& instance();
 
-  void push_log(internal::MessagePayload &&payload);
+  void push_log(internal::MessagePayload&& payload);
   void shutdown();
 
-  Logger(const Logger &) = delete;
-  Logger &operator=(const Logger &) = delete;
+  Logger(const Logger&) = delete;
+  Logger& operator=(const Logger&) = delete;
   ~Logger();
 
  private:
@@ -37,9 +37,8 @@ class Logger {
   std::unique_ptr<Sink> m_sink;
 };
 
-
 template <LogLevel level, typename... Args>
-inline void log(std::format_string<Args...> fmt, Args &&...args) {
+inline void log(std::format_string<Args...> fmt, Args&&... args) {
   if constexpr (level >= LOG_ACTIVE_LEVEL) {
     Logger::instance().push_log(internal::MessagePayload(
         level, fmt.get(), std::forward<Args>(args)...));
@@ -47,22 +46,22 @@ inline void log(std::format_string<Args...> fmt, Args &&...args) {
 }
 
 template <typename... Args>
-inline void log_debug(std::format_string<Args...> fmt, Args &&...args) {
+inline void log_debug(std::format_string<Args...> fmt, Args&&... args) {
   log<LOG_LEVEL_DEBUG>(fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void log_info(std::format_string<Args...> fmt, Args &&...args) {
+inline void log_info(std::format_string<Args...> fmt, Args&&... args) {
   log<LOG_LEVEL_INFO>(fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void log_warn(std::format_string<Args...> fmt, Args &&...args) {
+inline void log_warn(std::format_string<Args...> fmt, Args&&... args) {
   log<LOG_LEVEL_WARN>(fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void log_error(std::format_string<Args...> fmt, Args &&...args) {
+inline void log_error(std::format_string<Args...> fmt, Args&&... args) {
   log<LOG_LEVEL_ERROR>(fmt, std::forward<Args>(args)...);
 }
 

@@ -12,7 +12,7 @@ namespace log_library {
 
 class WindowsFileSink : public Sink {
  public:
-  explicit WindowsFileSink(const FileSinkConfig &config = {})
+  explicit WindowsFileSink(const FileSinkConfig& config = {})
       : config_(config),
         file_handle_(INVALID_HANDLE_VALUE),
         current_offset_(0) {
@@ -21,7 +21,7 @@ class WindowsFileSink : public Sink {
 
   ~WindowsFileSink() override { cleanup(); }
 
-  void write(const std::string &message, LogLevel level) override {
+  void write(const std::string& message, LogLevel level) override {
     if (file_handle_ == INVALID_HANDLE_VALUE) {
       return;
     }

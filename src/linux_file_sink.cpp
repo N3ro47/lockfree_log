@@ -15,14 +15,14 @@ namespace log_library {
 
 class LinuxFileSink : public Sink {
  public:
-  explicit LinuxFileSink(const FileSinkConfig &config = {})
+  explicit LinuxFileSink(const FileSinkConfig& config = {})
       : config_(config), fd_(-1), mapped_memory_(nullptr), current_offset_(0) {
     initialize();
   }
 
   ~LinuxFileSink() override { cleanup(); }
 
-  void write(const std::string &message, LogLevel level) override {
+  void write(const std::string& message, LogLevel level) override {
     if (!mapped_memory_) {
       return;
     }
@@ -33,7 +33,7 @@ class LinuxFileSink : public Sink {
       }
     }
 
-    std::memcpy(static_cast<char *>(mapped_memory_) + current_offset_,
+    std::memcpy(static_cast<char*>(mapped_memory_) + current_offset_,
                 message.data(), message.size());
     current_offset_ += message.size();
 
@@ -47,7 +47,7 @@ class LinuxFileSink : public Sink {
  private:
   FileSinkConfig config_;
   int fd_;
-  void *mapped_memory_;
+  void* mapped_memory_;
   size_t current_offset_;
 
   void initialize() {

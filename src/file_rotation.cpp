@@ -7,26 +7,26 @@
 namespace log_library {
 
 std::string FileRotationUtils::get_current_log_path(
-    const FileSinkConfig &config) {
+    const FileSinkConfig& config) {
   return config.log_directory + config.base_filename + config.file_extension;
 }
 
 std::string FileRotationUtils::get_rotated_log_path(
-    const FileSinkConfig &config, int rotation_number) {
+    const FileSinkConfig& config, int rotation_number) {
   return config.log_directory + config.base_filename + config.file_extension +
          "." + std::to_string(rotation_number);
 }
 
-bool FileRotationUtils::ensure_log_directory(const FileSinkConfig &config) {
+bool FileRotationUtils::ensure_log_directory(const FileSinkConfig& config) {
   try {
     std::filesystem::create_directories(config.log_directory);
     return true;
-  } catch (const std::filesystem::filesystem_error &) {
+  } catch (const std::filesystem::filesystem_error&) {
     return false;
   }
 }
 
-bool FileRotationUtils::rotate_log_files(const FileSinkConfig &config) {
+bool FileRotationUtils::rotate_log_files(const FileSinkConfig& config) {
   try {
     std::string current_path = get_current_log_path(config);
 
@@ -52,13 +52,13 @@ bool FileRotationUtils::rotate_log_files(const FileSinkConfig &config) {
     }
 
     return true;
-  } catch (const std::filesystem::filesystem_error &) {
+  } catch (const std::filesystem::filesystem_error&) {
     return false;
   }
 }
 
 size_t FileRotationUtils::calculate_total_disk_usage(
-    const FileSinkConfig &config) {
+    const FileSinkConfig& config) {
   size_t total_size = 0;
 
   try {
@@ -75,13 +75,13 @@ size_t FileRotationUtils::calculate_total_disk_usage(
         break;
       }
     }
-  } catch (const std::filesystem::filesystem_error &) {
+  } catch (const std::filesystem::filesystem_error&) {
   }
 
   return total_size;
 }
 
-void FileRotationUtils::cleanup_old_files(const FileSinkConfig &config) {
+void FileRotationUtils::cleanup_old_files(const FileSinkConfig& config) {
   size_t current_usage = calculate_total_disk_usage(config);
 
   if (current_usage <= config.system_max_use) {
@@ -102,12 +102,12 @@ void FileRotationUtils::cleanup_old_files(const FileSinkConfig &config) {
         break;
       }
     }
-  } catch (const std::filesystem::filesystem_error &) {
+  } catch (const std::filesystem::filesystem_error&) {
   }
 }
 
 std::vector<std::string> FileRotationUtils::get_rotated_files_sorted(
-    const FileSinkConfig &config) {
+    const FileSinkConfig& config) {
   std::vector<std::pair<std::string, std::filesystem::file_time_type>> files;
 
   try {
@@ -122,14 +122,14 @@ std::vector<std::string> FileRotationUtils::get_rotated_files_sorted(
     }
 
     std::sort(files.begin(), files.end(),
-              [](const auto &a, const auto &b) { return a.second < b.second; });
+              [](const auto& a, const auto& b) { return a.second < b.second; });
 
     std::vector<std::string> result;
-    for (const auto &file : files) {
+    for (const auto& file : files) {
       result.push_back(file.first);
     }
     return result;
-  } catch (const std::filesystem::filesystem_error &) {
+  } catch (const std::filesystem::filesystem_error&) {
     return {};
   }
 }

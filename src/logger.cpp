@@ -19,7 +19,7 @@
 
 namespace log_library {
 
-Logger &Logger::instance() {
+Logger& Logger::instance() {
   static Logger instance;
   return instance;
 }
@@ -34,7 +34,7 @@ Logger::~Logger() {
   }
 }
 
-void Logger::push_log(internal::MessagePayload &&payload) {
+void Logger::push_log(internal::MessagePayload&& payload) {
   if (m_queue.try_emplace(std::move(payload))) {
     m_signal.fetch_add(1, std::memory_order_release);
     m_signal.notify_one();

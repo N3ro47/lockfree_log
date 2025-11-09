@@ -12,7 +12,7 @@ enum LogLevel {
   LOG_LEVEL_NONE = 4
 };
 
-constexpr const char *to_string(LogLevel level) {
+constexpr const char* to_string(LogLevel level) {
   switch (level) {
     case LOG_LEVEL_DEBUG:
       return "DEBUG";
