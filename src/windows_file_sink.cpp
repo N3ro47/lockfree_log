@@ -5,8 +5,8 @@
 #include <stdexcept>
 
 #include "file_rotation.h"
-#include "internal/file_sink_config.h"
-#include "internal/sink.h"
+#include <log_library/file_sink_config.h>
+#include <log_library/sink.h>
 
 namespace log_library {
 

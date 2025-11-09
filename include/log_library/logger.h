@@ -19,6 +19,8 @@ class Logger {
  public:
   static Logger& instance();
 
+  static void init(std::unique_ptr<Sink> sink);
+
   void push_log(internal::MessagePayload&& payload);
   void shutdown();
 

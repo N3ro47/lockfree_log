@@ -1,3 +1,3 @@
-add_executable(simple_logger main.cpp)
+add_executable(simple_logger_example example.cpp)
 
-target_link_libraries(simple_logger PRIVATE log_library::log_library)
+target_link_libraries(simple_logger_example PRIVATE log_library::log_library)
