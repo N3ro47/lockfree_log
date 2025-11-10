@@ -22,59 +22,64 @@ struct MessagePayload {
   using FormatterFunc = void (*)(std::string&, std::string_view,
                                  const std::byte*);
   using DestructorFunc = void (*)(std::byte*);
-  using MoverFunc = void (*)(std::byte*, std::byte*);
+  using ClonerFunc = void (*)(std::byte*, const std::byte*);
 
   std::string_view format_string;  // 16
   std::thread::id thread_id;       // 8
   FormatterFunc formatter;         // 8
   DestructorFunc destructor;       // 8
-  MoverFunc mover;                 // 8  
+  ClonerFunc cloner;               // 8  
   LogLevel level;                  // 4
   // 4-byte padding inserted by compiler to meet alignment requirements,
   // bringing metadata size to 48 bytes. MAX_ARG_BUFFER_SIZE bytes in-place
   // buffer for arguments, making the total payload size a 128 bytes.
   alignas(std::max_align_t) std::byte arg_buffer[MAX_ARG_BUFFER_SIZE];
 
-  MessagePayload() : formatter(nullptr), destructor(nullptr) {}
+  MessagePayload() : formatter(nullptr), destructor(nullptr), cloner(nullptr) {}
   ~MessagePayload() {
     if (destructor) {
       destructor(arg_buffer);
     }
   }
 
-  MessagePayload(const MessagePayload&) = delete;
-  MessagePayload& operator=(const MessagePayload&) = delete;
-
-  MessagePayload(MessagePayload&& other) noexcept
+  MessagePayload(const MessagePayload& other)
       : format_string(other.format_string),
         thread_id(other.thread_id),
         formatter(other.formatter),
         destructor(other.destructor),
-        mover(other.mover),
+        cloner(other.cloner),
         level(other.level) {
-        if (mover) {
-          mover(arg_buffer, other.arg_buffer);
-        }
-    other.destructor = nullptr;
+    if (cloner) {
+      cloner(arg_buffer, other.arg_buffer);
+    }
   }
 
-  MessagePayload& operator=(MessagePayload&& other) noexcept {
-    if (this != &other) {
-      if (destructor) {
-        destructor(arg_buffer);
-      }
-
-      format_string = other.format_string;
-      thread_id = other.thread_id;
-      formatter = other.formatter;
-      destructor = other.destructor;
-      mover = other.mover;
-      level = other.level; 
-      if (mover) {
-        mover(arg_buffer, other.arg_buffer);
-      }
-      other.destructor = nullptr;
+  MessagePayload& operator=(const MessagePayload& other) {
+    if (this == &other) {
+      return *this;
     }
+
+    // Destroy existing object
+    if (destructor) {
+      destructor(arg_buffer);
+    }
+
+    // Copy data members
+    format_string = other.format_string;
+    thread_id = other.thread_id;
+    formatter = other.formatter;
+    destructor = other.destructor;
+    cloner = other.cloner;
+    level = other.level;
+    
+    // Clone the arguments
+    if (cloner) {
+      cloner(arg_buffer, other.arg_buffer);
+    } else {
+      // Ensure destructor is null if there's nothing to destroy
+      destructor = nullptr;
+    }
+    
     return *this;
   }
 
@@ -84,10 +89,13 @@ struct MessagePayload {
         thread_id(std::this_thread::get_id()),
         format_string(fmt),
         formatter(&format_message<std::decay_t<Args>...>),
-        destructor(&destoy_tuple<std::decay_t<Args>...>),
-        mover(&move_tuple<std::decay_t<Args>...>) {
+        destructor(&destroy_tuple<std::decay_t<Args>...>),
+        cloner(&clone_tuple<std::decay_t<Args>...>) {
     
     using TupleType = std::tuple<std::decay_t<Args>...>;
+
+    static_assert(std::is_copy_constructible_v<TupleType>, 
+                  "All log arguments must be copy constructible.");
 
     static_assert(sizeof(TupleType) <= MAX_ARG_BUFFER_SIZE,
                   "Log arguments exceed maximum payload size.");
@@ -112,7 +120,7 @@ struct MessagePayload {
   }
 
   template <typename... DecayedArgs>
-  static void destoy_tuple(std::byte* buffer) {
+  static void destroy_tuple(std::byte* buffer) {
     auto* tuple_ptr =
         std::launder(reinterpret_cast<std::tuple<DecayedArgs...>*>(buffer));
 
@@ -120,13 +128,13 @@ struct MessagePayload {
   }
 
   template <typename... DecayedArgs>
-  static void move_tuple(std::byte* dest, std::byte* src) {
-   auto* src_tuple_ptr =
-       std::launder(reinterpret_cast<std::tuple<DecayedArgs...>*>(src));
+  static void clone_tuple(std::byte* dest, const std::byte* src) {
+    const auto* src_tuple_ptr =
+        std::launder(reinterpret_cast<const std::tuple<DecayedArgs...>*>(src));
 
     std::construct_at(reinterpret_cast<std::tuple<DecayedArgs...>*>(dest),
-                     std::move(*src_tuple_ptr));
- }
+                     *src_tuple_ptr); // This performs the copy
+  }
 };
 
 }  // namespace log_library::internal

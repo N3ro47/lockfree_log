@@ -65,6 +65,7 @@ Logger::~Logger() {
 }
 
 void Logger::push_log(internal::MessagePayload&& payload) {
+  // Use try_emplace to construct the payload in-place in the queue's buffer.
   if (m_queue.try_emplace(std::move(payload))) {
     m_signal.fetch_add(1, std::memory_order_release);
     m_signal.notify_one();

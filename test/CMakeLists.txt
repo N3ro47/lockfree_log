@@ -21,3 +21,8 @@ add_executable(tsan_test continous_running.cpp)
 target_link_libraries(tsan_test PRIVATE log_library::log_library)
 target_compile_options(tsan_test PRIVATE -fsanitize=thread -g)
 target_link_options(tsan_test PRIVATE -fsanitize=thread -g)
+
+add_executable(burst_consistency_test burst_consistency_test.cpp)
+target_link_libraries(burst_consistency_test PRIVATE log_library::log_library)
+target_compile_options(burst_consistency_test PRIVATE -fsanitize=thread -g)
+target_link_options(burst_consistency_test PRIVATE -fsanitize=thread -g)
