@@ -10,6 +10,8 @@ add_subdirectory(src)
 
 add_subdirectory(examples)
 
+add_subdirectory(test)
+
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 

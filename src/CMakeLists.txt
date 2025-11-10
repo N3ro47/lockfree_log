@@ -1,6 +1,7 @@
 set(LOG_LIBRARY_SOURCES 
     logger.cpp
     file_rotation.cpp
+    sinks/file_sink.cpp
 )
 
 find_package(Threads REQUIRED)

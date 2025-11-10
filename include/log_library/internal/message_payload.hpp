@@ -3,106 +3,67 @@
 #include <log_library/config.h>
 
 #include <cstddef>
-#include <cstring>
 #include <iterator>
+#include <memory>
 #include <new>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 namespace log_library::internal {
 
-constexpr size_t MAX_ARG_BUFFER_SIZE = 80;
+constexpr size_t MAX_ARG_BUFFER_SIZE = 24;
 
 struct MessagePayload {
   using FormatterFunc = void (*)(std::string&, std::string_view,
                                  const std::byte*);
-  using DestructorFunc = void (*)(std::byte*);
 
-  std::string_view format_string;  // 16
-  std::thread::id thread_id;       // 8
-  FormatterFunc formatter;         // 8
-  DestructorFunc destructor;       // 8
-  LogLevel level;                  // 4
-  // 4-byte padding inserted by compiler to meet alignment requirements,
-  // bringing metadata size to 48 bytes. MAX_ARG_BUFFER_SIZE bytes in-place
-  // buffer for arguments, making the total payload size a 128 bytes.
+  std::string_view format_string;
+  std::thread::id thread_id;
+  FormatterFunc formatter;
+  LogLevel level;
   alignas(std::max_align_t) std::byte arg_buffer[MAX_ARG_BUFFER_SIZE];
 
-  MessagePayload() : formatter(nullptr), destructor(nullptr) {}
-  ~MessagePayload() {
-    if (destructor) {
-      destructor(arg_buffer);
-    }
-  }
-
-  MessagePayload(const MessagePayload&) = delete;
-  MessagePayload& operator=(const MessagePayload&) = delete;
-
-  MessagePayload(MessagePayload&& other) noexcept
-      : format_string(other.format_string),
-        thread_id(other.thread_id),
-        formatter(other.formatter),
-        destructor(other.destructor),
-        level(other.level) {
-    std::memcpy(arg_buffer, other.arg_buffer, MAX_ARG_BUFFER_SIZE);
-    other.destructor = nullptr;
-  }
-
-  MessagePayload& operator=(MessagePayload&& other) noexcept {
-    if (this != &other) {
-      if (destructor) {
-        destructor(arg_buffer);
-      }
-
-      format_string = other.format_string;
-      thread_id = other.thread_id;
-      formatter = other.formatter;
-      destructor = other.destructor;
-      level = other.level;
-      std::memcpy(arg_buffer, other.arg_buffer, MAX_ARG_BUFFER_SIZE);
-      other.destructor = nullptr;
-    }
-    return *this;
-  }
+  MessagePayload() = default;
+  ~MessagePayload() = default;
+  MessagePayload(const MessagePayload& other) = default;
+  MessagePayload& operator=(const MessagePayload& other) = default;
 
   template <typename... Args>
   MessagePayload(LogLevel lvl, std::string_view fmt, Args&&... args)
-      : level(lvl),
+      : format_string(fmt),
         thread_id(std::this_thread::get_id()),
-        format_string(fmt),
-        formatter(&format_message<Args...>),
-        destructor(&destoy_tuple<Args...>) {
-    static_assert(sizeof(std::tuple<Args...>) <= MAX_ARG_BUFFER_SIZE,
+        formatter(&format_message<std::decay_t<Args>...>),
+        level(lvl) {
+    using TupleType = std::tuple<std::decay_t<Args>...>;
+
+    // CORE CHANGE: Enforce that the arguments are trivially copyable.
+    static_assert((std::is_trivially_copyable_v<std::decay_t<Args>> && ...),
+                  "All log arguments must be trivially copyable.");
+
+    static_assert(sizeof(TupleType) <= MAX_ARG_BUFFER_SIZE,
                   "Log arguments exceed maximum payload size.");
 
-    std::construct_at(reinterpret_cast<std::tuple<Args...>*>(arg_buffer),
+    std::construct_at(reinterpret_cast<TupleType*>(arg_buffer),
                       std::forward<Args>(args)...);
   }
 
  private:
-  template <typename... Args>
+  template <typename... DecayedArgs>
   static void format_message(std::string& out, std::string_view fmt,
                              const std::byte* buffer) {
-    const auto* arg_tuple =
-        std::launder(reinterpret_cast<const std::tuple<Args...>*>(buffer));
+    const auto* arg_tuple = std::launder(
+        reinterpret_cast<const std::tuple<DecayedArgs...>*>(buffer));
 
     std::apply(
-        [&](const Args&... args) {
+        [&](const DecayedArgs&... args) {
           std::vformat_to(std::back_inserter(out), fmt,
                           std::make_format_args(args...));
         },
         *arg_tuple);
-  }
-
-  template <typename... Args>
-  static void destoy_tuple(std::byte* buffer) {
-    auto* tuple_ptr =
-        std::launder(reinterpret_cast<std::tuple<Args...>*>(buffer));
-
-    std::destroy_at(tuple_ptr);
   }
 };
 

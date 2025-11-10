@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "internal/file_sink_config.h"
+#include "log_library/file_sink_config.h"
 
 namespace log_library {
 

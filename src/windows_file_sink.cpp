@@ -1,3 +1,5 @@
+#include <log_library/file_sink_config.h>
+#include <log_library/sink.h>
 #include <windows.h>
 
 #include <cstring>
@@ -5,8 +7,6 @@
 #include <stdexcept>
 
 #include "file_rotation.h"
-#include "internal/file_sink_config.h"
-#include "internal/sink.h"
 
 namespace log_library {
 
