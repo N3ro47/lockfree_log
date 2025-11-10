@@ -1,11 +1,11 @@
-#include <log_library/file_sink.h>
+#include <log_library/sinks/file_sink.h>
 
 #include <memory>
 
 #ifdef _WIN32
-#include "../windows_file_sink.h"
+#include "windows_file_sink.h"
 #else
-#include "../linux_file_sink.h"
+#include "linux_file_sink.h"
 #endif
 
 namespace log_library {

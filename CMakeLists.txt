@@ -6,7 +6,17 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_subdirectory(src)
+# Add the main library components
+add_subdirectory(src/core)
+add_subdirectory(src/sinks)
+
+# Create a single INTERFACE library to represent the whole package
+# This makes linking for consumers (examples, tests) much easier.
+add_library(log_library INTERFACE)
+target_link_libraries(log_library INTERFACE log_library::core log_library::sinks)
+
+# Make an alias for consistency
+add_library(log_library::log_library ALIAS log_library)
 
 add_subdirectory(examples)
 
@@ -15,8 +25,10 @@ add_subdirectory(test)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+# Install all the component targets that make up the library
+# Note: We install the actual targets, not the aliases
 install(
-    TARGETS log_library
+    TARGETS log_library_core log_library_sinks
     EXPORT log_library-targets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

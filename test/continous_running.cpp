@@ -1,11 +1,12 @@
-#include <log_library/file_sink.h>
 #include <log_library/file_sink_config.h>
 #include <log_library/logger.h>
+#include <log_library/sinks/file_sink.h>
 
 #include <atomic>
 #include <chrono>
 #include <csignal>
 #include <iostream>
+#include <memory>
 #include <thread>
 #include <vector>
 
@@ -35,7 +36,9 @@ int main() {
   config.max_file_size = 10 * 1024;   // 10 KB
   config.system_max_use = 50 * 1024;  // 50 KB total
 
-  log_library::Logger::init(log_library::create_file_sink(config));
+  std::vector<std::unique_ptr<log_library::Sink>> sinks;
+  sinks.push_back(log_library::create_file_sink(config));
+  log_library::init_default_logger(std::move(sinks));
 
   log_library::log_info("Sanitizer test started. Running for 15 seconds.");
 
@@ -63,7 +66,9 @@ int main() {
 
   log_library::log_error("All workers finished. Main thread shutting down.");
 
-  log_library::Logger::instance().shutdown();
+  if (auto* logger = log_library::default_logger(); logger) {
+    logger->shutdown();
+  }
 
   std::cout << "Sanitizer test finished cleanly." << std::endl;
 

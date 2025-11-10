@@ -1,6 +1,8 @@
 #include <log_library/logger.h>
+#include <log_library/sinks/file_sink.h>
 
 #include <chrono>
+#include <memory>
 #include <thread>
 #include <vector>
 
@@ -14,6 +16,11 @@ void worker_thread(int id) {
 }
 
 int main() {
+  // Initialize the default logger with a file sink
+  std::vector<std::unique_ptr<log_library::Sink>> sinks;
+  sinks.push_back(log_library::create_file_sink());
+  log_library::init_default_logger(std::move(sinks));
+
   log_library::log_info("Main thread started. Spawning workers.");
 
   std::vector<std::thread> workers;
@@ -27,7 +34,9 @@ int main() {
 
   log_library::log_error("All workers finished. Main thread shutting down.");
 
-  log_library::Logger::instance().shutdown();
+  if (auto* logger = log_library::default_logger(); logger) {
+    logger->shutdown();
+  }
 
   return 0;
 }

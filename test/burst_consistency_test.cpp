@@ -83,7 +83,9 @@ int main() {
   auto sink = std::make_unique<VerifyingSink>();
   VerifyingSink* sink_ptr = sink.get();
 
-  log_library::Logger::init(std::move(sink));
+  std::vector<std::unique_ptr<log_library::Sink>> sinks;
+  sinks.push_back(std::move(sink));
+  log_library::init_default_logger(std::move(sinks));
 
   std::cout << "Starting burst and data consistency test..." << std::endl;
 
@@ -174,7 +176,9 @@ int main() {
               << " struct messages (no corruption or duplicates)." << std::endl;
   }
 
-  log_library::Logger::instance().shutdown();
+  if (auto* logger = log_library::default_logger(); logger) {
+    logger->shutdown();
+  }
 
   std::cout << "\nBurst and data consistency test finished successfully."
             << std::endl;
