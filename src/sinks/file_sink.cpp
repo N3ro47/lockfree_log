@@ -10,7 +10,6 @@
 
 namespace log_library {
 
-// Implements the factory function.
 std::unique_ptr<Sink> create_file_sink(const FileSinkConfig& config) {
 #ifdef _WIN32
   return std::make_unique<WindowsFileSink>(config);

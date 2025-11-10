@@ -2,6 +2,7 @@
 
 #include <log_library/file_sink_config.h>
 #include <log_library/sink.h>
+
 #include <memory>
 
 namespace log_library {

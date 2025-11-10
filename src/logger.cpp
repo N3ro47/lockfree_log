@@ -1,4 +1,6 @@
+#include <log_library/file_sink_config.h>
 #include <log_library/logger.h>
+#include <log_library/sink.h>
 
 #include <atomic>
 #include <chrono>
@@ -7,8 +9,6 @@
 #include <mutex>
 #include <thread>
 
-#include <log_library/file_sink_config.h>
-#include <log_library/sink.h>
 #include "internal/sink_config.h"
 
 // Platform-specific includes for the *default* sink
@@ -51,7 +51,6 @@ Logger::Logger() {
   if (state.sink) {
     m_sink = std::move(state.sink);
   } else {
-    // Default behavior if Logger::init() was not called.
     m_sink = std::make_unique<LOG_SINK_TYPE>();
   }
 
@@ -62,15 +61,6 @@ Logger::~Logger() {
   if (!m_done.load(std::memory_order_acquire)) {
     shutdown();
   }
-}
-
-void Logger::push_log(internal::MessagePayload&& payload) {
-  // Use try_emplace to construct the payload in-place in the queue's buffer.
-  if (m_queue.try_emplace(std::move(payload))) {
-    m_signal.fetch_add(1, std::memory_order_release);
-    m_signal.notify_one();
-  }
-  // Silently drop if queue is full (non-blocking guarantee)
 }
 
 void Logger::shutdown() {
@@ -91,8 +81,8 @@ void Logger::consumer_thread_loop() {
   while (!m_done.load(std::memory_order_acquire)) {
     if (m_queue.try_pop(payload)) {
       buffer.clear();
-      std::format_to(std::back_inserter(buffer), "{}: ",
-                     to_string(payload.level));
+      std::format_to(std::back_inserter(buffer),
+                     "{}: ", to_string(payload.level));
       payload.formatter(buffer, payload.format_string, payload.arg_buffer);
       buffer.push_back('\n');
       m_sink->write(buffer, payload.level);
@@ -102,11 +92,10 @@ void Logger::consumer_thread_loop() {
     }
   }
 
-  // drain loop
   while (m_queue.try_pop(payload)) {
     buffer.clear();
-    std::format_to(std::back_inserter(buffer), "{}: ",
-                   to_string(payload.level));
+    std::format_to(std::back_inserter(buffer),
+                   "{}: ", to_string(payload.level));
     payload.formatter(buffer, payload.format_string, payload.arg_buffer);
     buffer.push_back('\n');
     m_sink->write(buffer, payload.level);

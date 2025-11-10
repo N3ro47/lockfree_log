@@ -1,6 +1,6 @@
+#include <log_library/file_sink.h>
 #include <log_library/file_sink_config.h>
 #include <log_library/logger.h>
-#include <log_library/file_sink.h>
 
 #include <atomic>
 #include <chrono>
@@ -12,7 +12,8 @@
 std::atomic<bool> keep_running = true;
 
 void signal_handler(int signum) {
-  std::cout << "Signal (" << signum << ") received, shutting down." << std::endl;
+  std::cout << "Signal (" << signum << ") received, shutting down."
+            << std::endl;
   keep_running = false;
 }
 
@@ -31,9 +32,9 @@ int main() {
   log_library::FileSinkConfig config;
   config.log_directory = "./sanitizer_logs/";
   config.base_filename = "sanitizer_test";
-  config.max_file_size = 10 * 1024;        // 10 KB
-  config.system_max_use = 50 * 1024;       // 50 KB total
-  
+  config.max_file_size = 10 * 1024;   // 10 KB
+  config.system_max_use = 50 * 1024;  // 50 KB total
+
   log_library::Logger::init(log_library::create_file_sink(config));
 
   log_library::log_info("Sanitizer test started. Running for 15 seconds.");
@@ -46,14 +47,16 @@ int main() {
   auto start_time = std::chrono::steady_clock::now();
   while (keep_running) {
     auto now = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start_time);
+    auto elapsed =
+        std::chrono::duration_cast<std::chrono::seconds>(now - start_time);
     if (elapsed.count() >= 15) {
-      log_library::log_warn("Test duration reached, shutting down automatically.");
+      log_library::log_warn(
+          "Test duration reached, shutting down automatically.");
       keep_running = false;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
-  
+
   for (auto& t : workers) {
     t.join();
   }

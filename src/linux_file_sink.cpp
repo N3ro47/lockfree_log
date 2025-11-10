@@ -1,4 +1,4 @@
-#include "linux_file_sink.h" // Include the new header
+#include "linux_file_sink.h"
 
 #include <fcntl.h>
 #include <sys/mman.h>

@@ -12,7 +12,6 @@
 
 namespace log_library {
 
-// Forward declarations
 class Sink;
 
 class Logger {
@@ -21,7 +20,16 @@ class Logger {
 
   static void init(std::unique_ptr<Sink> sink);
 
-  void push_log(internal::MessagePayload&& payload);
+  template <typename... Args>
+  void push_log(LogLevel level, std::format_string<Args...> fmt,
+                Args&&... args) {
+    if (m_queue.try_emplace(level, fmt.get(), std::forward<Args>(args)...)) {
+      m_signal.fetch_add(1, std::memory_order_release);
+      m_signal.notify_one();
+    }
+    // Silently drop if queue is full (non-blocking guarantee)
+  }
+
   void shutdown();
 
   Logger(const Logger&) = delete;
@@ -42,8 +50,7 @@ class Logger {
 template <LogLevel level, typename... Args>
 inline void log(std::format_string<Args...> fmt, Args&&... args) {
   if constexpr (level >= LOG_ACTIVE_LEVEL) {
-    Logger::instance().push_log(internal::MessagePayload(
-        level, fmt.get(), std::forward<Args>(args)...));
+    Logger::instance().push_log(level, fmt, std::forward<Args>(args)...);
   }
 }
 
