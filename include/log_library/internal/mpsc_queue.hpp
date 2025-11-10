@@ -29,28 +29,35 @@ class MPSCQueue {
   MPSCQueue& operator=(const MPSCQueue&) = delete;
 
   template <typename... Args>
-  bool try_emplace(Args&&... args) {
-    const auto current_head = m_head.fetch_add(1, std::memory_order_relaxed);
-
-    while (current_head >= m_tail.load(std::memory_order_acquire) + Capacity) {
+bool try_emplace(Args&&... args) {
+  auto current_head = m_head.load(std::memory_order_relaxed);
+  
+  do {
+    if (current_head >= m_tail.load(std::memory_order_acquire) + Capacity) {
       return false;
     }
 
-    const size_t index = current_head & MASK;
-    std::construct_at(reinterpret_cast<T*>(&m_buffer[index]),
-                      std::forward<Args>(args)...);
+  } while (!m_head.compare_exchange_weak(current_head, current_head + 1,
+                                          std::memory_order_release,
+                                          std::memory_order_relaxed));
 
-    m_turnstile[index].store(current_head + 1, std::memory_order_release);
 
-    return true;
-  }
+  const size_t index = current_head & MASK;
+  std::construct_at(reinterpret_cast<T*>(&m_buffer[index]),
+                    std::forward<Args>(args)...);
+
+
+  m_turnstile[index].store(current_head + 1, std::memory_order_release);
+
+  return true;
+}
 
   bool try_pop(T& value) {
-    auto current_tail = m_tail.load(std::memory_order_relaxed);
+    auto current_tail = m_tail.load(std::memory_order_seq_cst);
 
     const size_t index = current_tail & MASK;
 
-    if (m_turnstile[index].load(std::memory_order_acquire) != m_tail + 1) {
+    if (m_turnstile[index].load(std::memory_order_seq_cst) != current_tail + 1) {
       return false;  // Queue is empty
     }
 
@@ -60,7 +67,7 @@ class MPSCQueue {
 
     std::destroy_at(slot);
 
-    m_tail.store(current_tail + 1, std::memory_order_release);
+    m_tail.store(current_tail + 1, std::memory_order_seq_cst);
 
     return true;
   }
