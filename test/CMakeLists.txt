@@ -24,3 +24,13 @@ add_executable(burst_consistency_test burst_consistency_test.cpp)
 target_link_libraries(burst_consistency_test PRIVATE log_library::log_library)
 target_compile_options(burst_consistency_test PRIVATE -fsanitize=thread -g)
 target_link_options(burst_consistency_test PRIVATE -fsanitize=thread -g)
+
+add_executable(thrughput_test logger_throughput.cpp)
+target_link_libraries(thrughput_test PRIVATE log_library::log_library)
+target_compile_options(thrughput_test PRIVATE -O3)
+target_link_options(thrughput_test PRIVATE -O3)
+
+add_executable(hot_path_latency hot_path_latency_test.cpp)
+target_link_libraries(hot_path_latency PRIVATE log_library::log_library)
+target_compile_options(hot_path_latency PRIVATE -O3)
+target_link_options(hot_path_latency PRIVATE -O3)

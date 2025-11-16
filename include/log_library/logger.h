@@ -19,13 +19,14 @@ class Logger {
   explicit Logger(std::vector<std::unique_ptr<Sink>> sinks);
 
   template <typename... Args>
-  void push_log(LogLevel level, std::format_string<Args...> fmt,
+  bool push_log(LogLevel level, std::format_string<Args...> fmt,
                 Args&&... args) {
     if (m_queue.try_emplace(level, fmt.get(), std::forward<Args>(args)...)) {
       m_signal.fetch_add(1, std::memory_order_release);
       m_signal.notify_one();
+      return true;
     }
-    // Silently drop if queue is full (non-blocking guarantee)
+    return false;
   }
 
   void shutdown();
@@ -50,32 +51,33 @@ void init_default_logger(std::vector<std::unique_ptr<Sink>> sinks);
 Logger* default_logger();
 
 template <LogLevel level, typename... Args>
-inline void log(std::format_string<Args...> fmt, Args&&... args) {
+inline bool log(std::format_string<Args...> fmt, Args&&... args) {
   if constexpr (level >= LOG_ACTIVE_LEVEL) {
     if (auto* logger = default_logger(); logger) {
-      logger->push_log(level, fmt, std::forward<Args>(args)...);
+      return logger->push_log(level, fmt, std::forward<Args>(args)...);
     }
   }
+  return false;
 }
 
 template <typename... Args>
-inline void log_debug(std::format_string<Args...> fmt, Args&&... args) {
-  log<LOG_LEVEL_DEBUG>(fmt, std::forward<Args>(args)...);
+inline bool log_debug(std::format_string<Args...> fmt, Args&&... args) {
+  return log<LOG_LEVEL_DEBUG>(fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void log_info(std::format_string<Args...> fmt, Args&&... args) {
-  log<LOG_LEVEL_INFO>(fmt, std::forward<Args>(args)...);
+inline bool log_info(std::format_string<Args...> fmt, Args&&... args) {
+  return log<LOG_LEVEL_INFO>(fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void log_warn(std::format_string<Args...> fmt, Args&&... args) {
-  log<LOG_LEVEL_WARN>(fmt, std::forward<Args>(args)...);
+inline bool log_warn(std::format_string<Args...> fmt, Args&&... args) {
+  return log<LOG_LEVEL_WARN>(fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void log_error(std::format_string<Args...> fmt, Args&&... args) {
-  log<LOG_LEVEL_ERROR>(fmt, std::forward<Args>(args)...);
+inline bool log_error(std::format_string<Args...> fmt, Args&&... args) {
+  return log<LOG_LEVEL_ERROR>(fmt, std::forward<Args>(args)...);
 }
 
 }  // namespace log_library
