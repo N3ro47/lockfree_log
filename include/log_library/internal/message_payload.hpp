@@ -17,6 +17,16 @@ namespace log_library::internal {
 
 constexpr size_t MAX_ARG_BUFFER_SIZE = 24;
 
+template<typename T>
+concept TriviallyCopyableArg = std::is_trivially_copyable_v<std::decay_t<T>>;
+
+template<typename... Args>
+concept FitsInLogBuffer =
+  sizeof(std::tuple<std::decay<Args> ...>) <= MAX_ARG_BUFFER_SIZE;
+
+template<typename... Args>
+concept LoggableArgs = (TriviallyCopyableArg<Args> && ...) && FitsInLogBuffer<Args...>;
+
 struct MessagePayload {
   using FormatterFunc = void (*)(std::string&, std::string_view,
                                  const std::byte*);
@@ -33,19 +43,13 @@ struct MessagePayload {
   MessagePayload& operator=(const MessagePayload& other) = default;
 
   template <typename... Args>
+  requires LoggableArgs<Args ...>
   MessagePayload(LogLevel lvl, std::string_view fmt, Args&&... args)
       : format_string(fmt),
         thread_id(std::this_thread::get_id()),
         formatter(&format_message<std::decay_t<Args>...>),
         level(lvl) {
     using TupleType = std::tuple<std::decay_t<Args>...>;
-
-    // CORE CHANGE: Enforce that the arguments are trivially copyable.
-    static_assert((std::is_trivially_copyable_v<std::decay_t<Args>> && ...),
-                  "All log arguments must be trivially copyable.");
-
-    static_assert(sizeof(TupleType) <= MAX_ARG_BUFFER_SIZE,
-                  "Log arguments exceed maximum payload size.");
 
     std::construct_at(reinterpret_cast<TupleType*>(arg_buffer),
                       std::forward<Args>(args)...);
