@@ -1,7 +1,6 @@
 #include <log_library/logger.h>
 #include <log_library/sink.h>
 
-#include <atomic>
 #include <cassert>
 #include <chrono>
 #include <format>

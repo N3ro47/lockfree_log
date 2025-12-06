@@ -3,7 +3,7 @@
 #include <atomic>
 #include <cstddef>
 #include <new>
-#include <utility>
+#include <memory>
 
 constexpr static size_t CACHE_LINE_SIZE = 64;
 
@@ -78,10 +78,10 @@ class MPSCQueue {
 
  private:
   static constexpr size_t MASK = Capacity - 1;
-  using Storage = alignas(T) std::byte[sizeof(T)];
+  using Storage = std::byte[sizeof(T)];
 
   alignas(CACHE_LINE_SIZE) std::atomic<size_t> m_head{0};
   alignas(CACHE_LINE_SIZE) std::atomic<size_t> m_tail{0};
   std::atomic<std::size_t> m_turnstile[Capacity];
-  alignas(CACHE_LINE_SIZE) Storage m_buffer[Capacity];
+  alignas(CACHE_LINE_SIZE) alignas(T) Storage m_buffer[Capacity];
 };

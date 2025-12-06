@@ -6,7 +6,6 @@
 #include <unistd.h>
 
 #include <cstring>
-#include <filesystem>
 #include <stdexcept>
 
 #include "file_rotation.h"

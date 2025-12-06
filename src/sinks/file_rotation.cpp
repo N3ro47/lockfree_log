@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <filesystem>
-#include <fstream>
 
 namespace log_library {
 
